@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Busta + Biglietti Caduta</title>
+
+<!-- FONT CORSIVO -->
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    background: #ffebf2; /* rosetta */
+    margin: 0;
+    font-family: "Dancing Script", cursive;
+    color: white;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- BUSTA --- */
+#envelope-container {
+    opacity: 0;
+    animation: fadeUp 1.5s ease forwards;
+    cursor: pointer;
+}
+@keyframes fadeUp {
+    from { transform: translateY(60px); opacity:0 }
+    to { transform: translateY(0); opacity:1 }
+}
+
+#envelope {
+    width: 260px;
+    height: 170px;
+    background: #d5b89a;
+    border-radius: 8px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+    position: relative;
+    transition: .3s;
+}
+#envelope:hover { transform: scale(1.05); }
+
+/* FLAP ABBASSATO DI QUALCHE PIXEL */
+#flap {
+    position: absolute;
+    width: 0; height: 0;
+    top: 10px; /* ABBASSATO */
+    left: 0;
+    border-left: 130px solid transparent;
+    border-right: 130px solid transparent;
+    border-top: 90px solid #c8a987;
+    transform-origin: top center;
+    transition: .6s ease;
+}
+
+/* --- FOGLIO --- */
+#paper {
+    width: 80%;
+    height: 70%;
+    max-width: 650px;
+    background: white;
+    color: black;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    display: none;
+    position: absolute;
+    opacity: 0;
+    transform: scale(.7) translateY(40px);
+    transition: 1s;
+    overflow-y: auto;
+    white-space: pre-line;
+    line-height: 1.6;
+    font-size: 1.3rem;
+}
+
+/* CURSORE */
+.cursor {
+    border-right: 2px solid black;
+    animation: blink .6s infinite;
+}
+@keyframes blink { 50%{ border-color:transparent } }
+
+/* --- BOTTONI SI / NO --- */
+.buttons {
+    display: none;
+    margin-top: 20px;
+    gap: 15px;
+    justify-content: center;
+    opacity: 0;
+    transition: 0.5s;
+}
+.buttons.show {
+    display: flex;
+    opacity: 1;
+}
+button {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 12px;
+    background: #e66fa2;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    font-family: "Dancing Script";
+}
+#noBtn { background: #ff4f6f; }
+button:hover { transform: scale(1.1) }
+
+/* --- BIGLIETTI FINTI CADUTA --- */
+#notesScreen {
+    display: none;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #ffdde8;
+}
+
+.fakeNote {
+    width: 60px;
+    height: 40px;
+    border-radius: 8px;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0.8;
+    animation: fallInfinite linear infinite;
+}
+
+/* CADUTA CONTINUA */
+@keyframes fallInfinite {
+    0% { transform: translateY(-50px) rotate(0deg); }
+    100% { transform: translateY(110vh) rotate(360deg); }
+}
+
+/* BIGLIETTO GRANDE */
+#bigNote {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    min-height: 200px;
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    font-size: 1.8rem;
+    color: black;
+    display: none;
+    text-align: center;
+    white-space: pre-line;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+</style>
+</head>
+<body>
+
+<!-- BUSTA -->
+<div id="envelope-container">
+    <div id="envelope">
+        <div id="flap"></div>
+    </div>
+</div>
+
+<!-- FOGLIO -->
+<div id="paper">
+    <span id="typed"></span><span class="cursor"></span>
+    <div class="buttons" id="buttons">
+        <button id="yesBtn">SI</button>
+        <button id="noBtn">NO</button>
+    </div>
+</div>
+
+<!-- SCHERMATA BIGLIETTI -->
+<div id="notesScreen"></div>
+<div id="bigNote"></div>
+
+<script>
+let message = 
+`Volevo scusarmi per averti ferita,
+ma le classiche scuse sono troppo banali per mostrarti che mi dispiace davvero,
+quindi ti ho fatto una pagina web,
+un idea stupida probabilmente ma originale, penso😅,
+cmq mi dispiace e spero che questo piccolo gesto ti faccia capire quanto ci tengo a te,
+non è bellissima, pk nn sono un grafico e nemmeno un programmatore,
+ma spero sia almeno un po' dolce e carina...come te 🥰🥰🥰,
+MI PERDONI? 🥺🥺🥺`;
+
+let typed = document.getElementById("typed");
+
+/* TYPEWRITER PIÙ LENTO */
+function typeWriter(text, callback){
+    typed.innerHTML = "";
+    let i = 0;
+    function write(){
+        if(i < text.length){
+            typed.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(write, text.charAt(i-1) === "\n" ? 300 : 120);
+        } else if(callback) callback();
+    }
+    write();
+}
+
+/* APRI BUSTA */
+document.getElementById("envelope-container").onclick = () => {
+    document.getElementById("flap").style.transform = "rotateX(180deg)";
+    setTimeout(()=>{
+        let paper = document.getElementById("paper");
+        paper.style.display = "block";
+        setTimeout(()=>{
+            paper.style.opacity = 1;
+            paper.style.transform = "scale(1) translateY(0)";
+            typeWriter(message, ()=>{
+                document.getElementById("buttons").classList.add("show");
+            });
+        },20);
+        document.getElementById("envelope-container").style.display = "none";
+    },500);
+};
+
+/* NUOVI BIGLIETTI FINTI CADUTA */
+const fakeNotesMessages = [
+    "SCUSA🥺🥺🥺",
+    "SEI...BELLISSIMA🥰🥰🥰",
+    "SEI...FANTASTICA🥰🥰🥰",
+    "SEI...UNICA🥰🥰🥰",
+    "SEI...MAGICA🥰🥰🥰",
+    "SEI...STUPENDA🥰🥰🥰",
+    "SEI SPECIALE PER ME🥰🥰🥰",
+    "SPERO DI AVER RIMEDIATO🥺🥺🥺",
+    "POSSO VENIRE A TROVARTI?🥺🥺🥺",
+    "MI MANCHI",
+    "FRA UN PO' VENGO A TROVARTI SE NON LA SMETTI DI FARE L'ARRABBIATA (SCHERZO)",
+    "VIENI A VEDERE LE PAPERELLE PLS PLS PLS PLS🦆🦆🦆",
+    "TI VOGLIO BENE",
+    "STO LAVORANDO AD UNA SORPRESA PER TE 😉😉😉E' UN PO' LUNGA DA FARE PERO', APPENA CI RIESCO TE LA MOSTRO"
+];
+
+const colors = ["#ff4f6f","#ff7f50","#ffb347","#ffdf6f","#6fc1ff","#7fff7f","#c47fff","#ff6fcf"];
+
+let noteIndex = 0; // indice per mostrare i biglietti in ordine
+
+/* MOSTRA SCHERMATA BIGLIETTI */
+document.getElementById("yesBtn").onclick = () => {
+    document.getElementById("paper").style.display = "none";
+    let screen = document.getElementById("notesScreen");
+    screen.style.display = "block";
+    spawnFakeNotes();
+};
+
+/* CREA BIGLIETTI FINTI COLORATI CHE CADONO */
+function spawnFakeNotes(){
+    const screen = document.getElementById("notesScreen");
+    for(let i=0;i<20;i++){
+        let note = document.createElement("div");
+        note.classList.add("fakeNote");
+        note.style.left = Math.random()*90 + "vw";
+        note.style.top = Math.random()*-20 + "vh";
+        note.style.background = colors[Math.floor(Math.random()*colors.length)];
+        note.style.animationDuration = (Math.random()*5 + 5) + "s";
+
+        note.onclick = () => {
+            // mostra il messaggio in ordine
+            let msg = fakeNotesMessages[noteIndex];
+            showBigNote(msg);
+
+            // passa al prossimo messaggio, ricomincia dall'inizio se finisce
+            noteIndex++;
+            if(noteIndex >= fakeNotesMessages.length){
+                noteIndex = 0;
+            }
+        }
+
+        screen.appendChild(note);
+    }
+}
+
+/* MOSTRA BIGLIETTO GRANDE */
+function showBigNote(text){
+    let big = document.getElementById("bigNote");
+    big.textContent = text;
+    big.style.display = "flex";
+}
+
+/* CHIUDI BIGLIETTO GRANDE AL CLICK */
+document.getElementById("bigNote").onclick = () => {
+    document.getElementById("bigNote").style.display = "none";
+};
+</script>
+
+</body>
+</html>
